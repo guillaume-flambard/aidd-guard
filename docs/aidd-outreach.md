@@ -7,11 +7,12 @@ Two open questions decide the shape of this thing, and neither is mine to
 answer, so **the Discussion goes first**. The issue below is what to open only
 if someone there asks for one.
 
-Nothing is posted until Guillaume says so.
+**Posted on 2026-09-11** in the Ideas category:
+<https://github.com/ai-driven-dev/framework/discussions/855>
 
 ---
 
-## 1. Discussion (post this one)
+## 1. Discussion (posted)
 
 **Category**: Ideas
 **Title**: `A deterministic check for acceptance criteria that no test covers`
