@@ -1,5 +1,5 @@
 {
-  "name": "aidd-guard",
+  "name": "@memolabs/aidd-guard",
   "version": "0.1.0",
   "description": "Deterministically report which AIDD acceptance criteria are covered by a Vitest or Jest test. Never runs the tests, never calls an LLM.",
   "keywords": [
@@ -21,6 +21,9 @@
   "packageManager": "pnpm@11.24.0",
   "bin": {
     "aidd-guard": "dist/cli.js"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "exports": {
     ".": {

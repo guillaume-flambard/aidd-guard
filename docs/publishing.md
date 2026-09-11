@@ -27,7 +27,7 @@ instead of an authentication error.
 This is the only part that needs a human and a browser.
 
 1. Sign in on <https://www.npmjs.com>.
-2. Add a trusted publisher for the package `aidd-guard`, with exactly:
+2. Add a trusted publisher for the package `@memolabs/aidd-guard`, with exactly:
    - provider: **GitHub Actions**
    - organization or user: `guillaume-flambard`
    - repository: `aidd-guard`
@@ -57,12 +57,27 @@ page**, which does not exist until the package does. The documentation says
 nothing either way about a name that has never been published; that silence is
 the whole of what it says, and the run above is the only evidence there is.
 
-So the first version goes up by hand, once:
+## The name npm refused
+
+`aidd-guard`, unscoped, is refused at the PUT with a 403:
+
+```
+npm error 403 Package name too similar to existing package aid-guard1
+```
+
+`aid-guard1` is a single-version package from March 2024 whose description is its
+own name. It locks the whole unscoped family, and **nothing in the registry says
+so beforehand**: a GET on `aidd-guard` answers 404, which reads as "free" and is
+not. The similarity filter only ever speaks at publish time. Hence the scope:
+`@memolabs/aidd-guard`, published with `access: public`, binary still
+`aidd-guard`.
+
+## The first publish, by hand, once
 
 ```sh
 npm login                       # browser, with the two-factor challenge
 pnpm build
-npm publish --access public
+npm publish
 ```
 
 That first tarball has **no provenance attestation**: provenance is signed from

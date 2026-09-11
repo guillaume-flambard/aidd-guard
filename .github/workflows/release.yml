@@ -65,7 +65,7 @@ jobs:
         id: published
         run: |
           version="$(node -p "require('./package.json').version")"
-          if npm view "aidd-guard@$version" version >/dev/null 2>&1; then
+          if npm view "@memolabs/aidd-guard@$version" version >/dev/null 2>&1; then
             echo "Already on npm: $version. Nothing to publish."
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
