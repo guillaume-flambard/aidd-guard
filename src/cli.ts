@@ -2,6 +2,8 @@
 import process from 'node:process';
 
 import { runCheck } from './commands/check.js';
+import { runLink, type LinkResult } from './commands/link.js';
+import { createTerminalAsk } from './link/prompt.js';
 import {
   AiddGuardError,
   AnnotationErrors,
@@ -30,9 +32,10 @@ const USAGE = `aidd-guard ${VERSION}
   never calls a model. Same input, same bytes.
 
 Usage
-  aidd-guard check [options]
+  aidd-guard check [options]     report what is linked and what is not
+  aidd-guard link  [options]     walk the unlinked criteria and write selectors
 
-Options
+Options for check
   --tasks <path>          Task documents root (default: aidd_docs/tasks, then docs/tasks)
   --docs <glob>           Documents to read, repeatable
                           (default: **/spec.md, **/plan.md, **/phase-*.md)
@@ -49,6 +52,15 @@ Options
   --verbose               List every criterion, not only what needs an action
   --no-color              Never emit ANSI colour
   --version, --help
+
+Options for link
+  --limit <n>             Stop after n criteria
+  --claimed               Only walk criteria whose box is already ticked
+  --order confidence|document   Best candidates first (default), or file order
+  --max-candidates <n>    Candidates offered per criterion (default: 5)
+  --min-score <0-1>       Hide candidates scoring below this
+  --dry-run               Decide everything, write nothing
+  (--tasks, --docs, --code, --tests, --runner also apply)
 
 Linking a criterion to a test
 
@@ -74,6 +86,10 @@ interface Parsed {
 }
 
 const VALUE_FLAGS = new Set([
+  '--limit',
+  '--max-candidates',
+  '--min-score',
+  '--order',
   '--tasks',
   '--docs',
   '--code',
@@ -89,6 +105,8 @@ const VALUE_FLAGS = new Set([
 ]);
 
 const BOOLEAN_FLAGS = new Set([
+  '--dry-run',
+  '--claimed',
   '--require-selector',
   '--fail-claimed',
   '--allow-empty',
@@ -200,16 +218,11 @@ export async function main(argv: readonly string[], cwd: string): Promise<number
     process.stdout.write(USAGE);
     return 0;
   }
-  if (parsed.command !== 'check') {
+  if (parsed.command !== 'check' && parsed.command !== 'link') {
     throw new AiddGuardError(
       'E_OPTION',
-      `Unknown command ${JSON.stringify(parsed.command)}. The only command is 'check'.`,
+      `Unknown command ${JSON.stringify(parsed.command)}. The commands are 'check' and 'link'.`,
     );
-  }
-
-  const format = single(parsed, '--format') ?? 'terminal';
-  if (format !== 'terminal' && format !== 'json') {
-    throw new AiddGuardError('E_OPTION', `--format expects 'terminal' or 'json', got ${format}.`);
   }
 
   const runner = single(parsed, '--runner');
@@ -217,19 +230,32 @@ export async function main(argv: readonly string[], cwd: string): Promise<number
     throw new AiddGuardError('E_OPTION', `--runner expects 'vitest' or 'jest', got ${runner}.`);
   }
 
-  const { report, exitCode } = await runCheck({
+  const discovery = {
     cwd,
     tasksPath: single(parsed, '--tasks'),
     docGlobs: parsed.values.get('--docs'),
     codePath: single(parsed, '--code'),
     testGlobs: parsed.values.get('--tests'),
+    allowEmpty: parsed.flags.has('--allow-empty'),
+  };
+
+  if (parsed.command === 'link') {
+    return runLinkCommand(parsed, discovery, runner);
+  }
+
+  const format = single(parsed, '--format') ?? 'terminal';
+  if (format !== 'terminal' && format !== 'json') {
+    throw new AiddGuardError('E_OPTION', `--format expects 'terminal' or 'json', got ${format}.`);
+  }
+
+  const { report, exitCode } = await runCheck({
+    ...discovery,
     runner,
     requireSelector: parsed.flags.has('--require-selector'),
     failOn: verdicts(parsed),
     minPass: integer(parsed, '--min-pass'),
     minCoverage: integer(parsed, '--min-coverage'),
     failClaimed: parsed.flags.has('--fail-claimed'),
-    allowEmpty: parsed.flags.has('--allow-empty'),
   });
 
   if (format === 'json') {
@@ -245,6 +271,98 @@ export async function main(argv: readonly string[], cwd: string): Promise<number
   }
 
   return exitCode;
+}
+
+/**
+ * The `link` session.
+ *
+ * Two runs of the same core: the first one counts what there is to do, so the
+ * prompt can say `[3/47]` from the very first question, and the second one is
+ * the real walk. Counting costs one extra parse of documents already in the
+ * page cache, and knowing the size of the queue is what stops an operator from
+ * abandoning it halfway.
+ */
+async function runLinkCommand(
+  parsed: Parsed,
+  discovery: {
+    cwd: string;
+    tasksPath: string | undefined;
+    docGlobs: string[] | undefined;
+    codePath: string | undefined;
+    testGlobs: string[] | undefined;
+    allowEmpty: boolean;
+  },
+  runner: 'vitest' | 'jest' | undefined,
+): Promise<number> {
+  const order: 'confidence' | 'document' = ((): 'confidence' | 'document' => {
+    const raw = single(parsed, '--order') ?? 'confidence';
+    if (raw !== 'confidence' && raw !== 'document') {
+      throw new AiddGuardError(
+        'E_OPTION',
+        `--order expects 'confidence' or 'document', got ${raw}.`,
+      );
+    }
+    return raw;
+  })();
+
+  const minScore = single(parsed, '--min-score');
+  const score = minScore === undefined ? undefined : Number(minScore);
+  if (score !== undefined && (!Number.isFinite(score) || score < 0 || score > 1)) {
+    throw new AiddGuardError('E_OPTION', `--min-score expects a number between 0 and 1.`);
+  }
+
+  const shared = {
+    ...discovery,
+    runner,
+    claimedOnly: parsed.flags.has('--claimed'),
+    order,
+    ...(score === undefined ? {} : { minScore: score }),
+    maxCandidates: integer(parsed, '--max-candidates') ?? undefined,
+  };
+
+  // Pass one: how many criteria are waiting. Answering `quit` to every
+  // proposal decides nothing and writes nothing.
+  const survey = await runLink({
+    ...shared,
+    dryRun: true,
+    ask: () => Promise.resolve({ kind: 'quit' }),
+  });
+
+  if (survey.considered === 0) {
+    process.stderr.write('Every criterion already carries an annotation. Nothing to link.\n');
+    return 0;
+  }
+
+  const { ask, close } = createTerminalAsk(
+    Math.min(survey.considered, integer(parsed, '--limit') ?? survey.considered),
+  );
+
+  let result: LinkResult;
+  try {
+    result = await runLink({
+      ...shared,
+      limit: integer(parsed, '--limit') ?? undefined,
+      dryRun: parsed.flags.has('--dry-run'),
+      ask,
+    });
+  } finally {
+    close();
+  }
+
+  const lines = [
+    '',
+    `${result.linked.length} linked, ${result.markedNonTestable.length} marked non-testable, ` +
+      `${result.skipped} skipped, ${result.remaining} left.`,
+  ];
+  if (result.dryRun) {
+    lines.push('--dry-run: nothing was written.');
+  } else if (result.filesWritten.length > 0) {
+    lines.push(`Written: ${result.filesWritten.join(', ')}`);
+    lines.push('Run `aidd-guard check` to see the new verdicts.');
+  }
+  process.stderr.write(`${lines.join('\n')}\n`);
+
+  return 0;
 }
 
 export function reportError(error: unknown): number {

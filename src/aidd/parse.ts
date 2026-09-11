@@ -37,6 +37,16 @@ export interface ParsedCriterion {
   text: string;
   /** 1-based line of the criterion's first line. */
   line: number;
+  /**
+   * 1-based line of its last line. Equal to `line` unless the criterion wrapped.
+   *
+   * Carried because an annotation has to be written *after* the whole
+   * criterion: inserting it between a criterion's first and second line reads
+   * as if it belonged to something else.
+   */
+  endLine: number;
+  /** Columns of indentation before the bullet marker, used when writing back. */
+  indent: number;
   /** `null` for a `done-when` bullet, which has no box. */
   claimed: boolean | null;
   /** Continuation lines and comments that belong to this criterion. */
@@ -155,6 +165,8 @@ export function parseDocument(content: string, file: string): ParsedDocument {
         section,
         text: stripTrailing(checkbox[3] ?? ''),
         line,
+        endLine: line,
+        indent: (checkbox[1] ?? '').length,
         claimed: box === 'x',
         attached: [],
       };
@@ -170,6 +182,8 @@ export function parseDocument(content: string, file: string): ParsedDocument {
         section,
         text: stripTrailing(bullet[2] ?? ''),
         line,
+        endLine: line,
+        indent: (bullet[1] ?? '').length,
         claimed: null,
         attached: [],
       };
@@ -202,6 +216,7 @@ export function parseDocument(content: string, file: string): ParsedDocument {
     }
 
     current.text = `${current.text} ${raw.trim()}`;
+    current.endLine = line;
   }
 
   close();

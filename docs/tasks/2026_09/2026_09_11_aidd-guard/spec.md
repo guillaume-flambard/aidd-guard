@@ -58,6 +58,19 @@ Report, deterministically, which AIDD acceptance criteria are covered by a test.
   <!-- aidd-guard:test="refuses an unknown option instead of ignoring it" -->
 - A violated gate exits 1, and a bad input exits 2.
   <!-- aidd-guard:test="exits 1, not 2, when only a gate was violated" -->
+- A criterion that already carries an annotation is never walked again, and never
+  overwritten.
+  <!-- aidd-guard:test="never touches a criterion that already carries an annotation" -->
+- The selector written by `link` lands under the criterion, and `check` then reads it.
+  <!-- aidd-guard:test="writes the selector, and check then passes that criterion" -->
+- An annotation is written after the last line of a criterion that wrapped.
+  <!-- aidd-guard:test="writes after the last line of a criterion that wrapped" -->
+- A `link` session driven by a pipe decides exactly what a typed one would.
+  <!-- aidd-guard:test="answers every proposal from the script, in order" -->
+- Input that runs out ends the session and keeps what was decided, rather than failing.
+  <!-- aidd-guard:test="quits when the input runs out, rather than throwing" -->
+- Nothing is written under `--dry-run`.
+  <!-- aidd-guard:test="writes nothing under --dry-run" -->
 - The published package installs and runs on a machine that has never seen it.
   <!-- aidd-guard:non-testable reason="Proven by a release, not by a unit test: the published tarball is checked by hand on a clean machine." -->
 

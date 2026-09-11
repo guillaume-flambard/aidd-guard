@@ -29,6 +29,9 @@ export type ErrorCode =
   | 'E_ANNOTATION_DUPLICATE'
   | 'E_ANNOTATION_UNKNOWN'
   | 'E_ANNOTATION_EMPTY_REASON'
+  // Link
+  | 'E_LINK_CONFLICT'
+  | 'E_LINK_EMPTY_SELECTOR'
   // Options
   | 'E_OPTION';
 

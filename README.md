@@ -95,6 +95,41 @@ non-empty reason. That reason is what keeps a skipped criterion auditable.
 > a `#### aidd-guard metadata` block would silently become a bogus section. A
 > comment cannot.
 
+## Paying down what is not linked
+
+`check` says what has no test. `link` is how that gets paid down: it walks the
+unlinked criteria, shows the candidate tests the matcher already computed, and
+writes the one you pick back into the document.
+
+```sh
+aidd-guard link --limit 20        # twenty at a time
+aidd-guard link --claimed         # the ticked boxes first: contradictions before gaps
+aidd-guard link --dry-run         # decide everything, write nothing
+```
+
+```
+[1/4] The export streams rows instead of buffering them.  [ticked]
+        aidd_docs/tasks/2026_09/2026_09_11_export/plan.md:26  Acceptance criteria
+
+  1) export > streams rows instead of buffering them for a large account
+     src/export.test.ts:6  score 0.71  shared: export, streams, rows, instead, buffering  [test is skipped]
+  2) export > writes the export as JSON
+     src/export.test.ts:4  score 0.14  shared: export
+
+  1-9 link to that test     /word search the test titles
+  t <title> link to a title you type
+  n <reason> not testable   s skip   q quit and write what is done
+```
+
+Criteria are walked best-candidate-first, so the most productive twenty minutes
+come first. `/word` searches every test title, which is what makes the command
+usable when documents and tests are written in different languages and
+similarity proposes nothing. A criterion that already carries an annotation is
+never walked and never overwritten. Quitting halfway writes what was decided and
+leaves the rest untouched.
+
+Answers can come from a pipe as well as a keyboard, so a session can be scripted.
+
 ## What similarity can and cannot do
 
 With no selector, aidd-guard falls back to a Jaccard score over significant
@@ -163,6 +198,9 @@ this tool into a hunt through an innocent task document.
 --verbose               List every criterion, not only what needs an action
 --no-color              Never emit ANSI colour
 ```
+
+`link` takes the same discovery options, plus `--limit`, `--claimed`,
+`--order confidence|document`, `--max-candidates`, `--min-score` and `--dry-run`.
 
 `--format json` is a contract: no timestamp, no absolute path, results sorted by
 file then line, absent values `null` rather than omitted. Two runs on the same

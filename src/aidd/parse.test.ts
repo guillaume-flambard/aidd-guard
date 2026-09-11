@@ -148,6 +148,23 @@ describe('what a naive reader gets wrong', () => {
     ]);
   });
 
+  it('carries the last line of a wrapped criterion, so an annotation lands after it', () => {
+    const parsed = parseDocument(
+      ['- [ ] A criterion that runs', '      onto a second line.'].join('\n'),
+      'plan.md',
+    );
+
+    expect(parsed.criteria[0]?.line).toBe(1);
+    expect(parsed.criteria[0]?.endLine).toBe(2);
+  });
+
+  it('carries the indentation of a nested criterion', () => {
+    const parsed = parseDocument('  - [ ] Nested under something.', 'plan.md');
+
+    expect(parsed.criteria[0]?.indent).toBe(2);
+    expect(parsed.criteria[0]?.endLine).toBe(1);
+  });
+
   it('does not swallow the next criterion as a continuation', () => {
     const content = ['- [ ] First criterion.', '- [ ] Second criterion.'].join('\n');
     expect(texts(content)).toEqual(['First criterion.', 'Second criterion.']);

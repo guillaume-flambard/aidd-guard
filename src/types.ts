@@ -35,6 +35,10 @@ export interface Criterion {
   file: string;
   /** 1-based line of the criterion's first line. */
   line: number;
+  /** 1-based line of its last line, equal to `line` unless the criterion wrapped. */
+  endLine: number;
+  /** Columns of indentation before the bullet marker. */
+  indent: number;
   /**
    * `true` when the box was ticked, `false` when it was not, `null` for a
    * `done-when` line, which has no box.

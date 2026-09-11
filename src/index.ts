@@ -7,6 +7,14 @@
  */
 
 export { runCheck, type CheckInput, type CheckOutcome } from './commands/check.js';
+export {
+  runLink,
+  type LinkAsk,
+  type LinkChoice,
+  type LinkInput,
+  type LinkProposal,
+  type LinkResult,
+} from './commands/link.js';
 export { renderJson } from './report/json.js';
 export { renderTerminal, type TerminalOptions } from './report/terminal.js';
 export { SCHEMA_VERSION } from './report/types.js';
