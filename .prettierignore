@@ -3,4 +3,4 @@ dist
 node_modules
 pnpm-lock.yaml
 tests/fixtures
-docs/aidd-issue-draft.md
+docs/aidd-outreach.md
