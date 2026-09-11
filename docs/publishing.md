@@ -39,10 +39,37 @@ npm **does not validate that entry when you save it**. A typo in the repository
 name or the workflow filename surfaces only at the first publish attempt, as an
 authentication failure. Check the three fields before leaving the page.
 
-If npm refuses to configure a trusted publisher for a name that has never been
-published, publish `0.1.0` once by hand (`npm login`, then
-`npm publish --access public`, with the browser two-factor challenge), then come
-back and do the steps above. Every release after that goes through the workflow.
+## The first publish is not the ones after it
+
+Measured on 2026-09-11, publishing `0.1.0` from this workflow with nothing
+published under the name yet:
+
+```
+npm notice publish Signed provenance statement with source and build information from GitHub Actions
+npm error code E404
+npm error 404 Not Found - PUT https://registry.npmjs.org/aidd-guard
+npm error 404  The requested resource 'aidd-guard@0.1.0' could not be found or you do not have permission to access it.
+```
+
+A 404 on a PUT is what npm answers when the request carries no identity it
+accepts, and the trusted publisher setting lives on the **package settings
+page**, which does not exist until the package does. The documentation says
+nothing either way about a name that has never been published; that silence is
+the whole of what it says, and the run above is the only evidence there is.
+
+So the first version goes up by hand, once:
+
+```sh
+npm login                       # browser, with the two-factor challenge
+pnpm build
+npm publish --access public
+```
+
+That first tarball has **no provenance attestation**: provenance is signed from
+the workflow's OIDC identity, and a laptop has none. Every version after it does,
+because the trusted publisher can be configured as soon as the package exists.
+
+Then come back and do the one-time setup above.
 
 ## Cutting a release
 
