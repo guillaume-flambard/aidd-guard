@@ -72,8 +72,39 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
+      # Trusted publishing needs npm 11.5.1 or later. Node 24 ships a newer one,
+      # but a runner image can move: fail here with a sentence anyone can act
+      # on, rather than at the publish step with an authentication error that
+      # sends the reader looking for a missing token.
+      - name: The npm CLI is new enough for trusted publishing
+        if: steps.published.outputs.exists == 'false'
+        run: |
+          version="$(npm --version)"
+          echo "npm $version"
+          NPM_VERSION="$version" node -e '
+            const [major, minor, patch] = process.env.NPM_VERSION.split(".").map(Number);
+            const ok = major > 11 || (major === 11 && (minor > 5 || (minor === 5 && patch >= 1)));
+            if (!ok) {
+              console.error(`npm ${process.env.NPM_VERSION} is too old for trusted publishing (needs 11.5.1).`);
+              process.exit(1);
+            }
+          '
+
+      # No token anywhere, on purpose.
+      #
+      # npm removed classic and automation tokens in November 2025, and the
+      # "bypass 2FA" option on a granular token is itself being removed: it
+      # cannot do account actions since August 2026 and stops publishing
+      # entirely in January 2027. Trusted publishing is what replaces them.
+      # npm trades the workflow's OIDC identity for a short-lived credential,
+      # so the only thing that can publish this package is this workflow, in
+      # this repository. `id-token: write` above is what makes that possible,
+      # and it is also what signs the provenance attestation.
+      #
+      # The other side of it lives on npmjs.com: the package's trusted
+      # publisher must name this repository and the file name `release.yml`,
+      # exactly. npm does not validate that entry when it is saved, so a typo
+      # there only ever surfaces here.
       - name: Publish to npm with provenance
         if: steps.published.outputs.exists == 'false'
-        run: pnpm publish --access public --provenance --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public --provenance

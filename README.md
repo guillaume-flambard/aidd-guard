@@ -192,6 +192,15 @@ tool reads publishes as [`@ai-driven-dev/cli`](https://www.npmjs.com/package/@ai
 npm i -D aidd-guard      # pnpm add -D aidd-guard
 ```
 
+Until `0.1.0` is on npm, run it straight from the repository:
+
+```sh
+npx github:guillaume-flambard/aidd-guard check
+```
+
+How releases work, and why this repository stores no npm token:
+[docs/publishing.md](docs/publishing.md).
+
 Node 20.11 or later. One runtime dependency, `typescript`, used only to read
 test titles from the syntax tree, because a regular expression breaks on the
 apostrophes that real test titles contain.
