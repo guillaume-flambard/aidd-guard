@@ -232,11 +232,11 @@ Straight from the repository, which needs nothing published anywhere:
 npx github:guillaume-flambard/aidd-guard check
 ```
 
-The npm package is `@memolabs/aidd-guard`, and the binary it installs is
+The npm package is `@zoanlogia/aidd-guard`, and the binary it installs is
 `aidd-guard`:
 
 ```sh
-npm i -D @memolabs/aidd-guard      # pnpm add -D @memolabs/aidd-guard
+npm i -D @zoanlogia/aidd-guard      # pnpm add -D @zoanlogia/aidd-guard
 ```
 
 How releases work, and why this repository stores no npm token:

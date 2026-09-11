@@ -27,7 +27,7 @@ instead of an authentication error.
 This is the only part that needs a human and a browser.
 
 1. Sign in on <https://www.npmjs.com>.
-2. Add a trusted publisher for the package `@memolabs/aidd-guard`, with exactly:
+2. Add a trusted publisher for the package `@zoanlogia/aidd-guard`, with exactly:
    - provider: **GitHub Actions**
    - organization or user: `guillaume-flambard`
    - repository: `aidd-guard`
@@ -68,9 +68,12 @@ npm error 403 Package name too similar to existing package aid-guard1
 `aid-guard1` is a single-version package from March 2024 whose description is its
 own name. It locks the whole unscoped family, and **nothing in the registry says
 so beforehand**: a GET on `aidd-guard` answers 404, which reads as "free" and is
-not. The similarity filter only ever speaks at publish time. Hence the scope:
-`@memolabs/aidd-guard`, published with `access: public`, binary still
-`aidd-guard`.
+not. The similarity filter only ever speaks at publish time. Hence the scope.
+
+`@memolabs` was the first choice and the name was already taken, so the package
+went out under the account's own scope, `@zoanlogia/aidd-guard`, published with
+`access: public`. The binary is `aidd-guard` either way, which is the name
+anybody actually types.
 
 ## The first publish, by hand, once
 
