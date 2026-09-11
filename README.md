@@ -8,7 +8,7 @@ never runs the tests, never imports your code, and never calls a model. The same
 input always produces the same bytes.
 
 ```sh
-npx @memolabs/aidd-guard check
+npx github:guillaume-flambard/aidd-guard check
 ```
 
 ```
@@ -226,11 +226,18 @@ tool reads publishes as [`@ai-driven-dev/cli`](https://www.npmjs.com/package/@ai
 
 ## Install
 
+Straight from the repository, which needs nothing published anywhere:
+
+```sh
+npx github:guillaume-flambard/aidd-guard check
+```
+
+The npm package is `@memolabs/aidd-guard`, and the binary it installs is
+`aidd-guard`:
+
 ```sh
 npm i -D @memolabs/aidd-guard      # pnpm add -D @memolabs/aidd-guard
 ```
-
-The binary is `aidd-guard`, whatever the package is called.
 
 How releases work, and why this repository stores no npm token:
 [docs/publishing.md](docs/publishing.md).
