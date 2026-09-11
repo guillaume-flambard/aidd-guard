@@ -1,5 +1,7 @@
 #!/usr/bin/env node
+import { realpathSync } from 'node:fs';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 
 import { runCheck } from './commands/check.js';
 import { runLink, type LinkResult } from './commands/link.js';
@@ -385,8 +387,28 @@ export function reportError(error: unknown): number {
   return EXIT_INTERNAL;
 }
 
-const invokedDirectly =
-  process.argv[1] !== undefined && import.meta.url === `file://${process.argv[1]}`;
+/**
+ * Was this file run, or imported?
+ *
+ * Comparing `import.meta.url` to `process.argv[1]` as strings is the usual
+ * one-liner, and it is wrong for anything installed: a package manager puts a
+ * **symlink** in `node_modules/.bin`, so `argv[1]` is the link while
+ * `import.meta.url` is the file it points at. The two never match, the CLI
+ * silently does nothing, and the process exits 0 as if all was well. That is
+ * exactly what `npx github:...` did before this: no output, no error, no clue.
+ *
+ * Both sides are resolved through `realpath` instead.
+ */
+const invokedDirectly = ((): boolean => {
+  const entry = process.argv[1];
+  if (entry === undefined) return false;
+  try {
+    return realpathSync(entry) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    // An entry point that cannot be resolved is not this file.
+    return false;
+  }
+})();
 
 if (invokedDirectly) {
   main(process.argv.slice(2), process.cwd())

@@ -71,6 +71,9 @@ Report, deterministically, which AIDD acceptance criteria are covered by a test.
   <!-- aidd-guard:test="quits when the input runs out, rather than throwing" -->
 - Nothing is written under `--dry-run`.
   <!-- aidd-guard:test="writes nothing under --dry-run" -->
+- The command works when a package manager runs it through a symlink, not only
+  when it is run by path.
+  <!-- aidd-guard:test="prints its report rather than exiting silently" -->
 - The published package installs and runs on a machine that has never seen it.
   <!-- aidd-guard:non-testable reason="Proven by a release, not by a unit test: the published tarball is checked by hand on a clean machine." -->
 
