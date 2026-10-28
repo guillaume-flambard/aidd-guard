@@ -4,7 +4,8 @@ import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync, rmSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { URL, fileURLToPath } from 'node:url';
+import process from 'node:process';
 const source = fileURLToPath(new URL('../', import.meta.url));
 const run = (cwd,cmd,args) => spawnSync(cmd,args,{cwd,encoding:'utf8',env:{...process.env,CI:''}});
 test('pre-commit rejects bad staged changes, accepts clean ones', () => {
