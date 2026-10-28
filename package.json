@@ -42,9 +42,11 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",
     "format": "prettier --check .",
-    "test": "vitest run",
-    "prepare": "npm run build",
-    "self:check": "node dist/cli.js check --tasks docs/tasks --tests \"src/**/*.test.ts\" --tests \"tests/*.test.ts\" --runner vitest"
+    "test": "vitest run && node --test test/hooks.test.mjs",
+    "prepare": "npm run build && sh scripts/install-git-hooks.sh",
+    "self:check": "node dist/cli.js check --tasks docs/tasks --tests \"src/**/*.test.ts\" --tests \"tests/*.test.ts\" --runner vitest",
+    "hooks:install": "sh scripts/install-git-hooks.sh",
+    "check:staged": "pnpm typecheck"
   },
   "dependencies": {
     "typescript": "^5.9.3"
